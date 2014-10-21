@@ -103,6 +103,9 @@ CGFloat const kFocalPointOfInterestY = 0.5;
         _previewView = previewView;
         _metaDataObjectTypes = [self defaultMetaDataObjectTypes];
         [self addRotationObserver];
+        UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc]
+          initWithTarget:self action:@selector(focusOnTap:)];
+        [_previewView addGestureRecognizer:tapRecognizer];
     }
     return self;
 }
@@ -119,6 +122,9 @@ CGFloat const kFocalPointOfInterestY = 0.5;
         _metaDataObjectTypes = metaDataObjectTypes;
         _previewView = previewView;
         [self addRotationObserver];
+        UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc]
+          initWithTarget:self action:@selector(focusOnTap:)];
+        [_previewView addGestureRecognizer:tapRecognizer];
     }
     return self;
 }
@@ -304,5 +310,38 @@ CGFloat const kFocalPointOfInterestY = 0.5;
                                                object:nil];
 }
 
+- (void) focusOnTap:(UITapGestureRecognizer *)recognizer {
+    CGPoint aPoint = [recognizer locationInView: _previewView];
+
+    Class captureDeviceClass = NSClassFromString(@"AVCaptureDevice");
+    if (captureDeviceClass != nil) {
+        AVCaptureDevice *device = [captureDeviceClass defaultDeviceWithMediaType:AVMediaTypeVideo];
+        if([device isFocusPointOfInterestSupported] &&
+           [device isFocusModeSupported:AVCaptureFocusModeAutoFocus]) {
+
+            CGPoint focusPoint = [_capturePreviewLayer captureDevicePointOfInterestForPoint:aPoint];
+            if([device lockForConfiguration:nil]) {
+                [device setFocusPointOfInterest:CGPointMake(focusPoint.x,focusPoint.y)];
+                [device setFocusMode:AVCaptureFocusModeAutoFocus];
+                if ([device isExposureModeSupported:AVCaptureExposureModeAutoExpose]){
+                    [device setExposureMode:AVCaptureExposureModeAutoExpose];
+                }
+                [device unlockForConfiguration];
+            }
+        }
+    }
+
+    if (focusSquare) { [focusSquare removeFromSuperview]; }
+
+    focusSquare = [[MTBBarcodeSquare alloc]initWithFrame:CGRectMake(aPoint.x-40, aPoint.y-40, 80, 80)];
+    [focusSquare setBackgroundColor:[UIColor clearColor]];
+    [_previewView addSubview:focusSquare];
+    [focusSquare setNeedsDisplay];
+
+    [UIView beginAnimations:nil context:NULL];
+    [UIView setAnimationDuration:1.5];
+    [focusSquare setAlpha:0.0];
+    [UIView commitAnimations];
+}
 
 @end

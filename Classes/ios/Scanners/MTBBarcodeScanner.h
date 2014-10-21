@@ -8,8 +8,11 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
+#import "MTBBarcodeSquare.h"
 
-@interface MTBBarcodeScanner : NSObject
+@interface MTBBarcodeScanner : NSObject {
+  MTBBarcodeSquare *focusSquare;
+}
 
 /**
  *  Initialize a scanner that will feed the camera input
